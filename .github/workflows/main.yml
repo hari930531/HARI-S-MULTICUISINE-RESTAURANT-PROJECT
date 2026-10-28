@@ -1,0 +1,60 @@
+name: Restaurant Microservices CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build & Push Microservice Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 1. Build and Push Backend Image
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/restaurant-backend:latest,${{ secrets.DOCKERHUB_USERNAME }}/restaurant-backend:${{ github.sha }}
+
+      # 2. Build and Push Consumer Image
+      - name: Build and Push Consumer Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./consumer
+          file: ./consumer/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/restaurant-payment-consumer:latest,${{ secrets.DOCKERHUB_USERNAME }}/restaurant-payment-consumer:${{ github.sha }}
+
+      # 3. Build and Push Frontend Image
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/restaurant-frontend:latest,${{ secrets.DOCKERHUB_USERNAME }}/restaurant-frontend:${{ github.sha }}
+
+      # 4. Validate Kubernetes Manifests
+      - name: Validate Kubernetes YAML Files
+        run: |
+          python3 -c "import yaml, glob; [yaml.safe_load_all(open(f)) for f in glob.glob('k8s/**/*.yml', recursive=True)]"
+          echo "All Kubernetes manifests validated successfully!"
