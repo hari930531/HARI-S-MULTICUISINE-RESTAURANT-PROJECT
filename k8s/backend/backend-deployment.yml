@@ -1,0 +1,53 @@
+# Apps API version for managing stateless deployments
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  # Run 2 backend pods for high availability and load balancing
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        # Your custom built Flask backend image
+        image: restaurant-backend:v1.0
+        # Use locally built image if present
+        imagePullPolicy: IfNotPresent
+        ports:
+        # Flask application listening port
+        - containerPort: 5000
+        env:
+        # DNS name resolving to the MySQL headless service
+        - name: DB_HOST
+          value: "mysql-headless"
+        # Database name
+        - name: DB_NAME
+          value: "restaurant_db"
+        # Non-root MySQL username
+        - name: DB_USER
+          value: "restaurant_user"
+        # Pull database password safely from Secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        # Internal DNS address of the Apache Kafka service
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"

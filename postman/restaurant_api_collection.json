@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "Hari's Multicuisine Restaurant - Full Test Suite",
+    "_postman_id": "haris-restaurant-collection-v3",
+    "description": "Collection with environment variables and line-by-line validated JS tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get Full Menu (Validate Array & Schema)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Verify that the server returns HTTP 200 OK status code",
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Parse the incoming JSON response payload into a JavaScript object",
+              "const dishes = pm.response.json();",
+              "",
+              "// Validate that the response is an array and contains more than zero records",
+              "pm.test('Menu response is a non-empty array', function () {",
+              "    pm.expect(dishes).to.be.an('array').that.is.not.empty;",
+              "});",
+              "",
+              "// Validate the data schema of the first dish item in the catalog",
+              "pm.test('Menu item contains all mandatory schema properties', function () {",
+              "    const item = dishes[0];",
+              "    // Verify presence of item_id string key",
+              "    pm.expect(item).to.have.property('item_id');",
+              "    // Verify presence of item_name string key",
+              "    pm.expect(item).to.have.property('item_name');",
+              "    // Verify presence of price number key",
+              "    pm.expect(item).to.have.property('price');",
+              "    // Verify presence of category string key",
+              "    pm.expect(item).to.have.property('category');",
+              "    // Verify presence of image_url path key",
+              "    pm.expect(item).to.have.property('image_url');",
+              "});",
+              "",
+              "// Ensure that API response time is within reasonable limit",
+              "pm.test('Response latency is under 1000ms', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/menu",
+          "host": ["{{base_url}}"],
+          "path": ["api", "menu"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Menu by Category (Validate Starters Filter)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Assert that the endpoint responds with HTTP 200 OK status",
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Parse the returned category list response",
+              "const startersList = pm.response.json();",
+              "",
+              "// Loop through every item and assert that its category matches 'starters'",
+              "pm.test('All returned records strictly belong to starters category', function () {",
+              "    startersList.forEach(function (dish) {",
+              "        // Check if the category property equals 'starters'",
+              "        pm.expect(dish.category).to.eql('starters');",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/menu?category=starters",
+          "host": ["{{base_url}}"],
+          "path": ["api", "menu"],
+          "query": [
+            {
+              "key": "category",
+              "value": "starters"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Daily Analytics (Validate Business Metrics)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Check HTTP status code 200 OK",
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Parse analytics payload",
+              "const analytics = pm.response.json();",
+              "",
+              "// Check if status is success",
+              "pm.test('Response payload returns success status', function () {",
+              "    pm.expect(analytics.status).to.eql('success');",
+              "});",
+              "",
+              "// Validate analytics data types and presence of sales figures",
+              "pm.test('Analytics metrics contain valid numeric values', function () {",
+              "    // Ensure total_sales is returned as a number",
+              "    pm.expect(analytics.total_sales).to.be.a('number');",
+              "    // Ensure total_orders is returned as a number",
+              "    pm.expect(analytics.total_orders).to.be.a('number');",
+              "    // Ensure top_selling_item string exists",
+              "    pm.expect(analytics).to.have.property('top_selling_item');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/analytics/daily-summary",
+          "host": ["{{base_url}}"],
+          "path": ["api", "analytics", "daily-summary"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Pay Bill (Validate 5% GST Math & Save Order ID to Environment)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 1. Check HTTP Status code 200 OK",
+              "pm.test('Payment API returns HTTP 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// 2. Parse response JSON object",
+              "const res = pm.response.json();",
+              "const bill = res.bill_details;",
+              "",
+              "// 3. Verify status value is 'success'",
+              "pm.test('Transaction status returns success', function () {",
+              "    pm.expect(res.status).to.eql('success');",
+              "});",
+              "",
+              "// 4. Validate that valid Order ID is generated",
+              "pm.test('Generated order_id is a positive integer', function () {",
+              "    pm.expect(bill.order_id).to.be.above(0);",
+              "});",
+              "",
+              "// 5. Store generated order_id into Postman Environment variable dynamically",
+              "pm.environment.set('test_order_id', bill.order_id);",
+              "",
+              "// 6. Perform step-by-step 5% Indian GST mathematical calculation check",
+              "pm.test('Validate precise Indian GST calculation (2.5% CGST + 2.5% SGST = 5%)', function () {",
+              "    // Extract subtotal amount from bill",
+              "    const subtotal = bill.subtotal;",
+              "    // Calculate expected CGST (2.5%) rounded to 2 decimals",
+              "    const expectedCGST = Number((subtotal * 0.025).toFixed(2));",
+              "    // Calculate expected SGST (2.5%) rounded to 2 decimals",
+              "    const expectedSGST = Number((subtotal * 0.025).toFixed(2));",
+              "    // Calculate expected Grand Total = subtotal + CGST + SGST",
+              "    const expectedTotal = Number((subtotal + expectedCGST + expectedSGST).toFixed(2));",
+              "",
+              "    // Assert CGST in response matches expected calculation",
+              "    pm.expect(bill.cgst_2_5).to.eql(expectedCGST);",
+              "    // Assert SGST in response matches expected calculation",
+              "    pm.expect(bill.sgst_2_5).to.eql(expectedSGST);",
+              "    // Assert grand total in response matches combined calculation",
+              "    pm.expect(bill.grand_total).to.eql(expectedTotal);",
+              "});",
+              "",
+              "// 7. Verify table_number matches the environment variable configured",
+              "pm.test('Bill table number matches environment variable', function () {",
+              "    const envTable = Number(pm.environment.get('table_number'));",
+              "    pm.expect(bill.table_number).to.eql(envTable);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table_number\": {{table_number}},\n  \"subtotal\": 275.00,\n  \"payment_method\": \"UPI\",\n  \"items\": [\n    {\n      \"id\": \"MC-002\",\n      \"name\": \"Madurai Kari Dosa (Mutton)\",\n      \"price\": 240.00,\n      \"qty\": 1\n    },\n    {\n      \"id\": \"BEV-001\",\n      \"name\": \"Kumbakonam Traditional Filter Coffee\",\n      \"price\": 35.00,\n      \"qty\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/orders/pay",
+          "host": ["{{base_url}}"],
+          "path": ["api", "orders", "pay"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

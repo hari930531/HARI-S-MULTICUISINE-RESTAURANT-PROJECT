@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hari's Multicuisine Restaurant - Kubernetes Microservices</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            background-color: #f6f8fa;
+        }
+        .container {
+            background: #ffffff;
+            border: 1px solid #d1d5da;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: #a81c1c;
+            border-bottom: 2px solid #eaecef;
+            padding-bottom: 12px;
+            font-size: 28px;
+        }
+        h2 {
+            color: #24292e;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 8px;
+            margin-top: 32px;
+            font-size: 22px;
+        }
+        h3 {
+            color: #0366d6;
+            margin-top: 24px;
+            font-size: 18px;
+        }
+        p, li {
+            font-size: 15px;
+        }
+        pre {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13.5px;
+            line-height: 1.45;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+        code {
+            background-color: rgba(27,31,35,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13.5px;
+            color: #c7254e;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        ul {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .highlight-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #2e7d32;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Hari's Multicuisine Restaurant - Microservices System on Kubernetes</h1>
+    <p>Production-ready, highly available, distributed cloud-native restaurant management application designed to handle live catalog browsing, Indian GST billing (5%), asynchronous event streaming with Apache Kafka, real-time consumer terminal logging, and persistent relational data storage on Kubernetes.</p>
+
+    <div class="highlight-box">
+        <strong>Architecture Core:</strong> Python Flask (Backend) • Nginx (Frontend) • MySQL (StatefulSet Persistence) • Apache Kafka & Zookeeper (Event Backbone) • Python Consumer Worker (Real-time DB sync & CLI logger).
+    </div>
+
+    <h2>1. Project High-Level Architecture Overview</h2>
+    <p>System contains an Nginx static frontend UI, Python Flask API gateway backend, MySQL StatefulSet cluster, Apache Kafka & Zookeeper event backbone, and a Python consumer worker pod.</p>
+
+<pre><code>+---------------------------------------------------------------------------------------------------+
+|                                  USER BROWSER / CLIENT TERMINAL                                   |
+|                          URL: http://127.0.0.1:&lt;NodePort&gt; (e.g. 57590)                            |
++---------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
++---------------------------------------------------------------------------------------------------+
+|                                KUBERNETES CLUSTER (MINIKUBE / K8S)                                |
+|                                                                                                   |
+|  +---------------------------+          +------------------------------------------------------+  |
+|  |     FRONTEND SERVICE      |          |                   BACKEND SERVICE                    |  |
+|  |     (NodePort 30080)      |          |                   (ClusterIP 5000)                   |  |
+|  +---------------------------+          +------------------------------------------------------+  |
+|                |                                                   ^                              |
+|                v                                                   | Proxy /api requests          |
+|  +---------------------------+         Reverse Proxy               |                              |
+|  |      FRONTEND PODS        | ------------------------------------+                              |
+|  |  (Nginx Alpine Server)    |                                                                    |
+|  |  - HTML / JS / CSS Assets |                                                                    |
+|  |  - 5% GST Modal UI Logic  |                                                                    |
+|  +---------------------------+                                                                    |
+|                                                                                                   |
+|  +---------------------------------------------------------------------------------------------+  |
+|  |                                     BACKEND PODS                                            |  |
+|  |                                  (Python Flask API)                                         |  |
+|  |  - GET  /api/menu (Category filtering: starters, main_course, snacks, beverages)            |  |
+|  |  - GET  /api/analytics/daily-summary (Revenue &amp; Top dish metrics)                           |  |
+|  |  - POST /api/orders/pay (5% GST calculation, MySQL write, Kafka Producer)                   |  |
+|  +---------------------------------------------------------------------------------------------+  |
+|                  |                                                           |                    |
+|      Writes Bill |                                            Produces Event |                    |
+|      Transaction |                                         to order-payments |                    |
+|                  v                                                           v                    |
+|  +-------------------------------+                       +-------------------------------------+  |
+|  |     MYSQL HEADLESS SERVICE    |                       |            KAFKA SERVICE            |  |
+|  |        (ClusterIP None)       |                       |           (ClusterIP 9092)          |  |
+|  +-------------------------------+                       +-------------------------------------+  |
+|                  |                                                           |                    |
+|                  v                                                           v                    |
+|  +-------------------------------+                       +-------------------------------------+  |
+|  |       MYSQL STATEFULSET       |                       |          KAFKA STATEFULSET          |  |
+|  |       (mysql-0, Port 3306)    |                       |         (kafka-0, Port 9092)        |  |
+|  |  - menu_items catalog         |                       |   Kafka Broker (Manages Partitions) |  |
+|  |  - orders (Status: PAID)      |                       +-------------------------------------+  |
+|  |  - payments (5% GST breakdown)|                                           ^                    |
+|  |  - PersistentVolumeClaim      |                                           | Manages Metadata   |
+|  +-------------------------------+                       +-------------------------------------+  |
+|                  ^                                       |            ZOOKEEPER POD            |  |
+|                  | Updates DB status                     |       (zookeeper, Port 2181)        |  |
+|                  | to PAID after read                    +-------------------------------------+  |
+|                  |                                                           |                    |
+|                  |                                            Consumes Event |                    |
+|                  |                                         from order-payments                    |
+|                  |                                                           v                    |
+|  +---------------------------------------------------------------------------------------------+  |
+|  |                                  PAYMENT CONSUMER POD                                       |  |
+|  |                        (Python Daemon Worker - Connection Pool)                             |  |
+|  |  - KafkaConsumer ('order-payments' topic)                                                  |  |
+|  |  - Commits offsets to Kafka on DB write                                                      |  |
+|  |  - Prints real-time formatted receipt to PowerShell console                                 |  |
+|  +---------------------------------------------------------------------------------------------+  |
++---------------------------------------------------------------------------------------------------+</code></pre>
+
+    <h2>2. Folder By Folder Deep-Dive &amp; Architectural Explanations</h2>
+
+    <h3>Folder 1: /backend</h3>
+    <p>Flask web application container gateway. Acts as the core transactional engine bridging MySQL database and Kafka broker.</p>
+<pre><code>+------------------------------------------------------------------------+
+|                            BACKEND FOLDER                              |
+|                                                                        |
+|   requirements.txt  --------->  Dockerfile  --------->  app.py         |
+|   (Flask, MySQL,                (Python 3.10            (Endpoints &amp;   |
+|    Kafka dependencies)           Slim Container)         Event Stream) |
++------------------------------------------------------------------------+</code></pre>
+    <ul>
+        <li><code>backend/app.py</code>: Initializes Flask server and configures CORS. Connects to MySQL pod using <code>mysql-headless</code>. Exposes <code>/api/menu</code>, <code>/api/analytics/daily-summary</code>, and <code>/api/orders/pay</code> (computes 2.5% CGST + 2.5% SGST, writes records, and emits message to Kafka topic <code>order-payments</code>).</li>
+        <li><code>backend/Dockerfile</code>: Uses <code>python:3.10-slim</code> official base image, installs dependencies, and exposes listening port 5000.</li>
+        <li><code>backend/requirements.txt</code>: Production dependencies: <code>Flask==3.0.0</code>, <code>flask-cors==4.0.0</code>, <code>mysql-connector-python==8.2.0</code>, <code>kafka-python==2.0.2</code>.</li>
+    </ul>
+
+    <h3>Folder 2: /consumer</h3>
+    <p>Asynchronous background daemon event processor pod. Continuously polls and streams real-time payment transactions from Apache Kafka.</p>
+<pre><code>+------------------------------------------------------------------------+
+|                            CONSUMER FOLDER                             |
+|                                                                        |
+|   requirements.txt  --------->  Dockerfile  --------->  consumer.py    |
+|   (kafka-python,                (Python Worker          (Listener &amp;    |
+|    dbutils, pymysql)             Container)              DB Committer) |
++------------------------------------------------------------------------+</code></pre>
+    <ul>
+        <li><code>consumer/consumer.py</code>: Implements <code>PooledDB</code> (PyMySQL) for resilient connection management. Subscribes to <code>order-payments</code> topic, marks orders as <code>PAID</code>, stores records in <code>payments</code> audit table, commits partition offset, and prints formatted receipts to stdout.</li>
+        <li><code>consumer/Dockerfile</code>: Builds lightweight container running <code>python consumer.py</code>.</li>
+        <li><code>consumer/requirements.txt</code>: Dependencies: <code>kafka-python==2.0.2</code>, <code>dbutils==3.1.0</code>, <code>pymysql==1.1.0</code>.</li>
+    </ul>
+
+    <h3>Folder 3: /database</h3>
+    <p>Relational database initialization script and seed dataset.</p>
+<pre><code>+------------------------------------------------------------------------+
+|                            DATABASE FOLDER                             |
+|                                                                        |
+|                             schema.sql                                 |
+|         +-----------------------+------------------------+             |
+|         |                       |                        |             |
+|         v                       v                        v             |
+|    menu_items                 orders                  payments         |
+|  (Catalog items)        (Table order master)    (GST &amp; transaction)    |
++------------------------------------------------------------------------+</code></pre>
+    <ul>
+        <li><code>database/schema.sql</code>: Configures <code>restaurant_db</code> with tables: <code>menu_items</code>, <code>orders</code>, <code>order_items</code>, and <code>payments</code> (storing subtotal, 2.5% CGST, 2.5% SGST, grand total, and payment method).</li>
+    </ul>
+
+    <h3>Folder 4: /frontend</h3>
+    <p>Nginx-served responsive client user interface.</p>
+<pre><code>+------------------------------------------------------------------------+
+|                            FRONTEND FOLDER                             |
+|                                                                        |
+|    index.html  &lt;====&gt;  style.css  &lt;====&gt;  app.js  &lt;====&gt;  assets/      |
+|    (UI Structure)      (Styling)          (Logic/Tax)     (Images)     |
+|                                                                        |
+|                     Dockerfile (Nginx Base Image)                      |
++------------------------------------------------------------------------+</code></pre>
+    <ul>
+        <li><code>frontend/index.html</code>: Modern dashboard layout with digital clock, business metrics badges, category tabs, food grid, floating tray, and GST tax invoice modal.</li>
+        <li><code>frontend/app.js</code>: Handles clock ticking, analytics loading, dynamic dish cards with interactive quantity counters, GST math (2.5% CGST + 2.5% SGST), and payment API calls.</li>
+        <li><code>frontend/style.css</code>: Indian restaurant theme styling, grid layout, floating tray, and modal styling.</li>
+        <li><code>frontend/Dockerfile</code>: Hosts static web assets under <code>/usr/share/nginx/html</code> via <code>nginx:alpine</code>.</li>
+    </ul>
+
+    <h3>Folder 5: /k8s (Kubernetes Manifests)</h3>
+    <p>Kubernetes Infrastructure as Code (IaC) configuration manifests.</p>
+    <ul>
+        <li><code>k8s/database/</code>: <code>secret.yml</code> (credentials), <code>headless-service.yml</code> (internal DNS), <code>statefulset.yml</code> (persistent storage MySQL pod).</li>
+        <li><code>k8s/kafka/</code>: <code>zookeeper.yml</code> (cluster coordination), <code>kafka-service.yml</code> (service DNS), <code>kafka-statefulset.yml</code> (Kafka message broker).</li>
+        <li><code>k8s/backend/</code>: <code>backend-deployment.yml</code> (2 replicas Flask API), <code>backend-service.yml</code> (ClusterIP load balancer).</li>
+        <li><code>k8s/consumer/</code>: <code>payment-consumer-deployment.yml</code> (Python worker daemon).</li>
+        <li><code>k8s/frontend/</code>: <code>frontend-configmap.yml</code> (Nginx reverse proxy), <code>frontend-deployment.yml</code> (2 replicas UI), <code>frontend-service-nodeport.yml</code> (external access port 30080).</li>
+    </ul>
+
+    <h3>Folder 6: /postman</h3>
+    <p>Automated regression tests, JSON schema validation, and environment variables.</p>
+    <ul>
+        <li><code>postman/restaurant-collection.json</code>: 4 API requests with assertions for status code, schema, and 5% GST calculations.</li>
+        <li><code>postman/restaurant-environment.json</code>: Environment profiles maintaining <code>base_url</code>, <code>table_number</code>, and dynamic <code>test_order_id</code>.</li>
+    </ul>
+
+    <h2>3. Step-by-Step Execution Commands</h2>
+
+    <h3>Step 1: Initialize Minikube Cluster</h3>
+<pre><code># Start local single-node Kubernetes cluster
+minikube start --driver=docker
+
+# Verify node connectivity
+kubectl get nodes</code></pre>
+
+    <h3>Step 2: Deploy Database &amp; Message Streaming Infrastructure</h3>
+<pre><code># Deploy MySQL StatefulSet and headless networking
+kubectl apply -f k8s/database/secret.yml
+kubectl apply -f k8s/database/headless-service.yml
+kubectl apply -f k8s/database/statefulset.yml
+
+# Deploy Zookeeper and Kafka broker
+kubectl apply -f k8s/kafka/zookeeper.yml
+kubectl apply -f k8s/kafka/kafka-service.yml
+kubectl apply -f k8s/kafka/kafka-statefulset.yml
+
+# Watch infrastructure pods until status reaches 1/1 Running
+kubectl get pods -w</code></pre>
+
+    <h3>Step 3: Populate Database Tables &amp; Menu Data</h3>
+<pre><code># Feed the complete SQL schema and dishes catalog directly into the MySQL pod
+Get-Content database\schema.sql | kubectl exec -i mysql-0 -- mysql -u restaurant_user -pAdmin@123 restaurant_db</code></pre>
+
+    <h3>Step 4: Build Microservice Images &amp; Load to Minikube</h3>
+<pre><code># 1. Build Backend API Docker image
+docker build -t restaurant-backend:v1.0 ./backend
+
+# 2. Build Kafka Payment Consumer Docker image
+docker build -t restaurant-payment-consumer:v1.0 ./consumer
+
+# 3. Build Nginx Frontend Docker image
+docker build -t restaurant-frontend:v1.0 ./frontend
+
+# 4. Transfer images directly into Minikube internal cache
+minikube image load restaurant-backend:v1.0
+minikube image load restaurant-payment-consumer:v1.0
+minikube image load restaurant-frontend:v1.0</code></pre>
+
+    <h3>Step 5: Launch Microservices Deployments</h3>
+<pre><code># Deploy Backend API layer
+kubectl apply -f k8s/backend/backend-deployment.yml
+kubectl apply -f k8s/backend/backend-service.yml
+
+# Deploy Kafka Consumer worker
+kubectl apply -f k8s/consumer/payment-consumer-deployment.yml
+
+# Deploy Frontend reverse proxy and UI pods
+kubectl apply -f k8s/frontend/frontend-configmap.yml
+kubectl apply -f k8s/frontend/frontend-deployment.yml
+kubectl apply -f k8s/frontend/frontend-service-nodeport.yml
+
+# Monitor rollout progression
+kubectl rollout status deployment/backend-deployment
+kubectl rollout status deployment/payment-consumer-deployment
+kubectl rollout status deployment/frontend-deployment</code></pre>
+
+    <h3>Step 6: Expose Frontend Service &amp; Stream Logs</h3>
+<pre><code># Terminal 1: Stream real-time consumer terminal logs
+kubectl logs -f -l app=payment-consumer
+
+# Terminal 2: Expose frontend to web browser
+minikube service frontend-service-nodeport</code></pre>
+
+    <h2>4. Background Kubernetes Runtime Execution Architecture</h2>
+    <p>User browser-la <strong>"Pay Bill"</strong> click panni confirm pannumbodhu, background-la Kubernetes components epdi interact aagudhu endra complete flow diagram:</p>
+
+<pre><code>+-------------------------------------------------------------------------------------------------------------+
+|                                    KUBERNETES RUNTIME WORKFLOW ON BILL PAYMENT                              |
+|                                                                                                             |
+|  [USER BROWSER]                                                                                             |
+|        |                                                                                                    |
+|        | 1. HTTP POST /api/orders/pay                                                                       |
+|        v                                                                                                    |
+|  [Kube-Proxy / Iptables NAT]                                                                                |
+|        | Routes traffic hitting NodePort to one of the healthy frontend Nginx pods                          |
+|        v                                                                                                    |
+|  [frontend-deployment-pod (Nginx Reverse Proxy)]                                                            |
+|        | Proxies call to http://backend-service:5000/api/orders/pay                                         |
+|        v                                                                                                    |
+|  [backend-service (ClusterIP: 10.96.x.x)]                                                                   |
+|        | Round-robin balances incoming traffic across healthy backend pods                                  |
+|        v                                                                                                    |
+|  [backend-deployment-pod (Flask)]                                                                           |
+|        |                                                                                                    |
+|        +-----> 2. CoreDNS resolves 'mysql-headless' to IP of 'mysql-0' pod                                  |
+|        |          Inserts orders record with status 'PAID' and writes items to PersistentVolume disk        |
+|        |                                                                                                    |
+|        +-----> 3. CoreDNS resolves 'kafka-service' to IP of 'kafka-0' pod                                   |
+|                   Publishes event payload with 5% GST breakdown into topic 'order-payments'                 |
+|                   Event is acknowledged and appended to the active commit log partition                     |
+|                                                                                                             |
+|  [payment-consumer-deployment-pod]                                                                          |
+|        |                                                                                                    |
+|        | 4. Continuous long-polling KafkaConsumer detects new uncommitted offset in 'order-payments'        |
+|        |    Pulls event from Kafka Broker partition                                                         |
+|        |                                                                                                    |
+|        +-----> 5. Updates order record in MySQL via internal connection pool                                |
+|        +-----> 6. Records tax transaction in MySQL 'payments' audit table                                   |
+|        +-----> 7. Commits consumer offset back to '__consumer_offsets' topic in Kafka                       |
+|        +-----> 8. Flushes formatted bill receipt to stdout via print(..., flush=True)                       |
+|                                                                                                             |
+|  [kubectl logs -f streaming engine]                                                                         |
+|        |                                                                                                    |
+|        v 9. Kubelet daemon streams stdout directly to host PowerShell window in real-time                   |
+|  +-------------------------------------------------------------------------------------------------------+  |
+|  | 💰 [KAFKA EVENT CONSUMED]: BILL_PAID SUCCESSFUL                                                        |  |
+|  | Order Reference : #1                                                                                  |  |
+|  | Subtotal Amount : INR 35.00                                                                           |  |
+|  | CGST (2.5%)     : INR 0.88                                                                            |  |
+|  | SGST (2.5%)     : INR 0.88                                                                            |  |
+|  | Grand Total Paid: INR 36.76 (UPI)                                                                     |  |
+|  | Database Status : ORDERS &amp; PAYMENTS TABLES UPDATED                                                    |  |
+|  +-------------------------------------------------------------------------------------------------------+  |
++-------------------------------------------------------------------------------------------------------------+</code></pre>
+
+    <h3>Background Kubernetes Components Explanation:</h3>
+    <ul>
+        <li><strong>CoreDNS:</strong> Container network-kulla irukira service names-ai (<code>mysql-headless</code>, <code>kafka-service</code>, <code>backend-service</code>) internal IP addresses-aa resolve pannudhu.</li>
+        <li><strong>Kube-Proxy:</strong> NodePort vazhiyaa vara connections-ai backend pods-kku iptables rules moolamaaga load balance panni route pannudhu.</li>
+        <li><strong>StatefulSet &amp; PVC:</strong> Pods restart aanaalum database tables matrum Kafka message data alinjupogaama physical disk-la retain aaguradhai ensure pannudhu.</li>
+        <li><strong>Kubelet &amp; stdout Log Driver:</strong> Consumer container stdout-la print aagura bill receipt-ai capture panni, host PowerShell terminal stream-kku live-aa transmit pannudhu.</li>
+    </ul>
+</div>
+
+</body>
+</html>

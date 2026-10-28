@@ -1,0 +1,47 @@
+# Apps API version
+apiVersion: apps/v1
+# Deployment running the background worker pod
+kind: Deployment
+metadata:
+  name: payment-consumer-deployment
+  labels:
+    app: payment-consumer
+spec:
+  # Single replica to preserve sequential event processing
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-consumer
+  template:
+    metadata:
+      labels:
+        app: payment-consumer
+    spec:
+      containers:
+      - name: payment-consumer
+        # Custom built Python consumer image
+        image: restaurant-payment-consumer:v1.0
+        imagePullPolicy: IfNotPresent
+        env:
+        # Database connection details to update order status to PAID
+        - name: DB_HOST
+          value: "mysql-headless"
+        - name: DB_NAME
+          value: "restaurant_db"
+        - name: DB_USER
+          value: "restaurant_user"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        # Kafka broker to consume order-payments events from
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"
+        resources:
+          limits:
+            cpu: "300m"
+            memory: "384Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"

@@ -1,0 +1,23 @@
+# Core API version
+apiVersion: v1
+# NodePort Service exposes the frontend outside the Kubernetes cluster
+kind: Service
+metadata:
+  name: frontend-service-nodeport
+  labels:
+    app: frontend
+spec:
+  # NodePort type makes application accessible on the host machine IP
+  type: NodePort
+  ports:
+  # Internal service port
+  - port: 80
+  # Target port on Nginx container
+    targetPort: 80
+  # Static port to access in browser: http://<NODE_IP>:30080
+    nodePort: 30080
+    protocol: TCP
+    name: http
+  selector:
+  # Route traffic to pods labeled app: frontend
+    app: frontend

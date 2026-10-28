@@ -1,0 +1,21 @@
+# Core API version
+apiVersion: v1
+# Internal Service to expose backend pods to the frontend
+kind: Service
+metadata:
+  name: backend-service
+  labels:
+    app: backend
+spec:
+  # ClusterIP: Only accessible inside the Kubernetes cluster
+  type: ClusterIP
+  ports:
+  # Service port exposed to the cluster
+  - port: 5000
+  # Container port where Flask receives traffic
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+  # Route traffic to pods labeled app: backend
+    app: backend

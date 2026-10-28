@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Character set encoding definition -->
+    <meta charset="UTF-8">
+    <!-- Responsive layout viewport setting for mobile and desktop screens -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hari's Multicuisine Restaurant</title>
+    <!-- External stylesheet reference -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============================================================================== -->
+    <!-- SECTION 1: TOP RESTAURANT HEADER WITH LIVE CLOCK & DAILY ANALYTICS             -->
+    <!-- ============================================================================== -->
+    <header class="restaurant-header">
+        <div class="header-content">
+            <!-- Brand title and subtitle description -->
+            <div class="brand-info">
+                <h1>Hari's Multicuisine Restaurant</h1>
+                <p>Authentic Madurai, Kerala, Andhra & North Indian Specialities</p>
+            </div>
+
+            <!-- Top Right Corner Widgets: Running Clock & Business Analytics -->
+            <div class="header-right-panel">
+                <!-- Running Real-Time Clock Box -->
+                <div class="live-clock-card">
+                    <span id="live-date">-- --- ----</span>
+                    <span class="clock-separator">|</span>
+                    <span id="live-time">--:--:-- --</span>
+                </div>
+
+                <!-- Live Daily Business Metrics Badges -->
+                <div class="daily-stats-badge">
+                    <div class="stat-pill">
+                        <small>Today's Sale:</small>
+                        <strong id="daily-sales-amount">₹0.00</strong>
+                    </div>
+                    <div class="stat-pill">
+                        <small>Top Dish:</small>
+                        <strong id="top-ordered-dish">-</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================================== -->
+    <!-- SECTION 2: CATEGORY FILTER NAVIGATION TABS                                     -->
+    <!-- ============================================================================== -->
+    <nav class="category-bar">
+        <button class="cat-tab active" onclick="loadDishes('all', this)">All</button>
+        <button class="cat-tab" onclick="loadDishes('starters', this)">Starters</button>
+        <button class="cat-tab" onclick="loadDishes('main_course', this)">Main Course</button>
+        <button class="cat-tab" onclick="loadDishes('snacks', this)">Snacks</button>
+        <button class="cat-tab" onclick="loadDishes('beverages', this)">Beverages</button>
+    </nav>
+
+    <!-- ============================================================================== -->
+    <!-- SECTION 3: DYNAMIC FOOD DISHES GRID CONTAINER                                  -->
+    <!-- ============================================================================== -->
+    <main class="menu-grid-container" id="menu-grid">
+        <!-- Dishes are injected dynamically via app.js -->
+    </main>
+
+    <!-- ============================================================================== -->
+    <!-- SECTION 4: FLOATING BOTTOM ORDER SUMMARY & CHECKOUT TRAY                       -->
+    <!-- ============================================================================== -->
+    <footer class="bottom-order-tray">
+        <div class="tray-summary">
+            <span id="tray-total-items">0 Items</span>
+            <span class="tray-separator">•</span>
+            <span id="tray-total-price">₹0.00</span>
+        </div>
+        <!-- Opens the Indian GST tax invoice modal -->
+        <button class="checkout-btn" onclick="openBillModal()">Pay Bill</button>
+    </footer>
+
+    <!-- ============================================================================== -->
+    <!-- SECTION 5: INDIAN GST TAX INVOICE & PAYMENT POPUP MODAL                        -->
+    <!-- ============================================================================== -->
+    <div id="bill-modal" class="bill-modal-overlay" style="display: none;">
+        <div class="bill-receipt-card">
+            <h2>Hari's Multicuisine Restaurant</h2>
+            <p class="bill-subheading">Authentic Dining Experience • Tax Invoice</p>
+            <hr class="receipt-divider">
+            
+            <div class="receipt-info-row">
+                <span>Bill Date & Time:</span>
+                <span id="bill-timestamp">--</span>
+            </div>
+            <div class="receipt-info-row">
+                <span>Table Number:</span>
+                <span>Table 01</span>
+            </div>
+            <hr class="receipt-divider">
+
+            <!-- Selected dishes list rendered by JavaScript -->
+            <div id="bill-items-list" class="receipt-items-container"></div>
+            <hr class="receipt-divider">
+
+            <!-- Subtotal and Indian GST Tax breakdown -->
+            <div class="receipt-info-row">
+                <span>Subtotal:</span>
+                <span id="bill-subtotal">₹0.00</span>
+            </div>
+            <div class="receipt-info-row">
+                <span>CGST (2.5%):</span>
+                <span id="bill-cgst">₹0.00</span>
+            </div>
+            <div class="receipt-info-row">
+                <span>SGST (2.5%):</span>
+                <span id="bill-sgst">₹0.00</span>
+            </div>
+            <hr class="receipt-divider">
+            <div class="receipt-info-row total-highlight">
+                <strong>Grand Total (Incl. 5% GST):</strong>
+                <strong id="bill-grand-total">₹0.00</strong>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="receipt-modal-actions">
+                <button class="btn-bill-cancel" onclick="closeBillModal()">Cancel</button>
+                <button class="btn-bill-pay" onclick="submitBillPayment()">Pay Bill & Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core frontend application logic -->
+    <script src="app.js"></script>
+</body>
+</html>

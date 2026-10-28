@@ -1,0 +1,25 @@
+{
+  "id": "env-haris-restaurant-001",
+  "name": "Restaurant Local K8s Env",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:57590",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "table_number",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "test_order_id",
+      "value": "",
+      "type": "any",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

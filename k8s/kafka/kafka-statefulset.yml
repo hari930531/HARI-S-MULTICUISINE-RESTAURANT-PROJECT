@@ -1,0 +1,84 @@
+# Kubernetes Apps API version for managing Stateful workloads
+apiVersion: apps/v1
+# StatefulSet preserves deterministic pod identity (kafka-0) and persistent message log storage
+kind: StatefulSet
+metadata:
+  # Unique controller identifier name
+  name: kafka
+  labels:
+    # Pod routing label
+    app: kafka
+spec:
+  # Headless service used to control network routing and DNS of stateful pods
+  serviceName: "kafka-service"
+  # Single broker instance
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        # Official Apache Kafka container image
+        image: apache/kafka:3.7.0
+        env:
+        # Unique integer node ID assigned to this node
+        - name: KAFKA_NODE_ID
+          value: "1"
+        # Enable combined controller and broker role (KRaft mode)
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        # Self-quorum voter definition pointing to this stateful pod
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@kafka-0.kafka-service:9093"
+        # Fixed valid cluster ID for automatic disk formatting
+        - name: CLUSTER_ID
+          value: "4L622nShT-eMCtK--X86sw"
+        # Listeners inside container for clients and controller
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+        # External address advertised to backend and consumer services
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka-service:9092"
+        # Listener names mapping
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        # Security protocol mapping
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+        # Single-node topic replication factor
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        # Automatically create Kafka topics on first producer message
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
+        # Container port exposure
+        ports:
+        - containerPort: 9092
+          name: kafka
+        - containerPort: 9093
+          name: controller
+        # Persistent storage volume mount
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /tmp/kafka-logs
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "768Mi"
+          requests:
+            cpu: "250m"
+            memory: "384Mi"
+  # Dynamic persistent storage provisioning
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi

@@ -1,0 +1,36 @@
+# Apps API version
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  # Run 2 Nginx web server pods for load distribution
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        # Custom built Nginx image containing UI and images
+        image: restaurant-frontend:v1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        # Standard web port
+        - containerPort: 80
+        volumeMounts:
+        # Replace default nginx.conf inside container using our ConfigMap
+        - name: nginx-config-vol
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      # Define ConfigMap volume source
+      - name: nginx-config-vol
+        configMap:
+          name: frontend-config

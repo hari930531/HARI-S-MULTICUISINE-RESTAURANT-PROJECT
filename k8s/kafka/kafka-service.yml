@@ -1,0 +1,15 @@
+# Core API version
+apiVersion: v1
+# Exposes Kafka broker endpoints internally to the cluster
+kind: Service
+metadata:
+  name: kafka-service
+  labels:
+    app: kafka
+spec:
+  ports:
+  # Kafka broker communication port
+  - port: 9092
+    name: kafka
+  selector:
+    app: kafka

@@ -1,0 +1,19 @@
+# Core API version
+apiVersion: v1
+# Service resource definition
+kind: Service
+metadata:
+  # Service name matching the StatefulSet serviceName
+  name: mysql-headless
+  labels:
+    app: mysql
+spec:
+  ports:
+  # Default port used by MySQL
+  - port: 3306
+    name: mysql
+  # clusterIP: None makes this a Headless Service for direct DNS addressing
+  clusterIP: None
+  selector:
+    # Directs traffic to pods with label app: mysql
+    app: mysql

@@ -1,0 +1,63 @@
+# Apps API version used for StatefulSets
+apiVersion: apps/v1
+# StatefulSet manages stateful apps that need persistent storage and stable identities
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  # Selector linking the StatefulSet controller to its managed Pods
+  selector:
+    matchLabels:
+      app: mysql
+  # Links directly to our headless service for stable DNS hostname
+  serviceName: "mysql-headless"
+  # Run 1 MySQL database instance
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        # Pod label used by the selector and headless service
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        # Official MySQL 8.0 image from Docker Hub
+        image: mysql:8.0
+        env:
+        # Read root password securely from mysql-secret
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        # Create default database on first boot
+        - name: MYSQL_DATABASE
+          value: "restaurant_db"
+        # Create dedicated non-root application user
+        - name: MYSQL_USER
+          value: "restaurant_user"
+        # Read non-root user password from mysql-secret
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        ports:
+        # Expose MySQL port inside the container
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        # Mount persistent disk inside container directory where data is stored
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+  # Automatically creates a PersistentVolumeClaim (PVC) for storage
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-persistent-storage
+    spec:
+      # ReadWriteOnce: mountable as read-write by a single cluster node
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          # Disk storage requested for database records
+          storage: 10Gi

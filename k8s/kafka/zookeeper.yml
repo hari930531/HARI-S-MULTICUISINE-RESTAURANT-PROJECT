@@ -1,0 +1,46 @@
+# Core workload API for Deployments
+apiVersion: apps/v1
+# Deployment managing Zookeeper replica
+kind: Deployment
+metadata:
+  # Deployment name
+  name: zookeeper
+spec:
+  # Exactly 1 instance of Zookeeper
+  replicas: 1
+  # Selector mapping to manage pod
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        # Service routing label
+        app: zookeeper
+    spec:
+      containers:
+      # Container name
+      - name: zookeeper
+        # Official Apache Zookeeper image (Docker Hub standard, always available)
+        image: zookeeper:3.9.2
+        # Port definition
+        ports:
+        # Default client port
+        - containerPort: 2181
+          name: client
+---
+# Core API version
+apiVersion: v1
+# Internal cluster service for Zookeeper
+kind: Service
+metadata:
+  # Internal DNS name matching KAFKA_ZOOKEEPER_CONNECT
+  name: zookeeper-service
+spec:
+  # Target pods labeled app: zookeeper
+  selector:
+    app: zookeeper
+  ports:
+  # Service port forwarding to container port
+  - port: 2181
+    targetPort: 2181
