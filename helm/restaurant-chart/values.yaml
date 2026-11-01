@@ -1,0 +1,46 @@
+# Database Configuration
+database:
+  name: restaurant_db
+  user: restaurant_user
+  password: "Admin@123"
+  rootPassword: "Admin@123"
+  storageSize: 1Gi
+
+# Backend API Configuration
+backend:
+  replicaCount: 2
+  image:
+    repository: restaurant-backend
+    tag: v1.0
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5000
+
+# Consumer Worker Configuration
+consumer:
+  replicaCount: 1
+  image:
+    repository: restaurant-payment-consumer
+    tag: v1.0
+    pullPolicy: IfNotPresent
+
+# Frontend Web Configuration
+frontend:
+  replicaCount: 2
+  image:
+    repository: restaurant-frontend
+    tag: v1.1
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30080
+
+# Kafka & Zookeeper Ports
+kafka:
+  topic: order-payments
+  servicePort: 9092
+
+zookeeper:
+  servicePort: 2181

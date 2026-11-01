@@ -1,0 +1,17 @@
+# Helm chart API format version (v2 is standard for Helm 3)
+apiVersion: v2
+
+# Name of our chart package
+name: restaurant-chart
+
+# Short summary of the project
+description: Helm Chart for Hari's Multicuisine Restaurant Kubernetes Microservices
+
+# Type of chart (application means it runs deployable services)
+type: application
+
+# Internal version number of this Helm package
+version: 0.1.0
+
+# Version number of the underlying restaurant application
+appVersion: "1.0.0"

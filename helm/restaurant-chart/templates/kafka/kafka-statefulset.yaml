@@ -1,0 +1,58 @@
+# Kubernetes API version for StatefulSet workloads
+apiVersion: apps/v1
+
+# Resource type
+kind: StatefulSet
+
+# Metadata containing the StatefulSet name
+metadata:
+  # Name of the Kafka controller
+  name: kafka
+
+# Specification defining the desired state of Kafka
+spec:
+  # Name of the governing service for stable networking
+  serviceName: "kafka-service"
+  # Run a single Kafka broker instance
+  replicas: 1
+  # Selector matching the pod labels below
+  selector:
+    matchLabels:
+      app: kafka
+
+  # Pod template definition
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        # Container identifier
+        - name: kafka
+          # Official lightweight Wurstmeister Kafka image
+          image: "wurstmeister/kafka:latest"
+          # Internal network port listening on 9092
+          ports:
+            - containerPort: 9092
+
+          # Essential Kafka environment variables
+          env:
+            # Unique integer ID assigned to this Kafka broker
+            - name: KAFKA_BROKER_ID
+              value: "1"
+
+            # Connect string pointing to the active Zookeeper service
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "zookeeper-service:{{ .Values.zookeeper.servicePort }}"
+
+            # Internal network interface binding (all IPs inside container)
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://0.0.0.0:9092"
+
+            # External hostname that Flask and Consumer pods will use to reach Kafka
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka-service:{{ .Values.kafka.servicePort }}"
+
+            # Automatically create the topic on first payment event
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
